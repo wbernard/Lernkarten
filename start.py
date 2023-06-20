@@ -37,7 +37,6 @@ class KarteiWahlUndNeu(Gtk.Window):
                 break
             else:
                 self.kartei_liste = Gtk.ListStore(int, str)
-            
         
         # App menu  - Menu in der Kopfleiste   
         self.menu_button_model = Gio.Menu()
@@ -60,7 +59,6 @@ class KarteiWahlUndNeu(Gtk.Window):
         self.pBox.set_margin_start(50)
         self.pBox.set_margin_end(50)
 
-
         self.sw = Gtk.ScrolledWindow()  # Fenster mit Rollbalken
         #self.sw.set_shadow_type(Gtk.ShadowType.ETCHED_IN)
         self.sw.set_policy(Gtk.PolicyType.NEVER,Gtk.PolicyType.ALWAYS) # horizontal kein Balken, vertikal immer
@@ -72,12 +70,11 @@ class KarteiWahlUndNeu(Gtk.Window):
         self.list_ansicht.set_model(self.kartei_liste)
         self.sw.set_child(self.list_ansicht)
 
-        spal_titel = ["oid", "Doppelklick öffnet Kartei"] 
-        for i in range(1,2):
-            rendererText = Gtk.CellRendererText(xalign=0.0, editable=False)
-            column = Gtk.TreeViewColumn(spal_titel[i], rendererText, text=i)
-            column.set_cell_data_func(rendererText, self.celldata, func_data=i)
-            self.list_ansicht.append_column(column)
+        name_spalte = "Doppelklick öffnet Kartei" 
+        renderer = Gtk.CellRendererText(xalign=0.0, editable=False)
+        column = Gtk.TreeViewColumn(name_spalte, renderer, text=True)
+        column.set_cell_data_func(renderer, self.celldata, func_data=True)
+        self.list_ansicht.append_column(column)
    
         self.list_ansicht.set_property('activate-on-single-click', False) # Reihe wird mit einem Klick aktiv
         self.list_ansicht.connect('row-activated', self.auswahl)
@@ -87,7 +84,7 @@ class KarteiWahlUndNeu(Gtk.Window):
         self.eing1.add_css_class("card")
         self.eing1.set_margin_top(10)
         self.eing1.set_placeholder_text("Name der neuen Kartei")
-        self.pBox.append(self.eing1)        
+        self.pBox.append(self.eing1)
       
         # Toast
         self.toast_overlay = Adw.ToastOverlay.new()
@@ -234,8 +231,7 @@ class KarteiWahlUndNeu(Gtk.Window):
         win1 = KarteiWahlUndNeu()
         win1.present()   
         pass
-  
-                
+        
     def on_toast_dismissed(self, toast):
         os.popen("rm -rf %s/*" % CACHE)
         os.popen("rm -rf {}/SaveDesktop/.{}/*".format(download_dir, date.today()))
@@ -509,7 +505,6 @@ class KarteNeu(Gtk.Window):
         win2 = KartenListe(self.name)
         win2.present()  # schließt das Fenster der Karteikartenbox
 
-      
     def on_toast_dismissed(self, toast):
         os.popen("rm -rf %s/*" % CACHE)
         os.popen("rm -rf {}/SaveDesktop/.{}/*".format(download_dir, date.today()))
@@ -631,7 +626,6 @@ class Karte(Gtk.Window):
         win2 = KartenListe(self.name)
         win2.present()  
         
-      
     def on_toast_dismissed(self, toast):
         os.popen("rm -rf %s/*" % CACHE)
         os.popen("rm -rf {}/SaveDesktop/.{}/*".format(download_dir, date.today()))
@@ -642,7 +636,6 @@ class MyApp(Adw.Application):
         self.connect('activate', self.on_activate)
     
     def on_activate(self, app):
-     
         self.win = KarteiWahlUndNeu(application=app)
         self.win.present()
         
