@@ -642,19 +642,7 @@ class MyApp(Adw.Application):
         self.connect('activate', self.on_activate)
     
     def on_activate(self, app):
-        '''db_name = 'karteibox.db'
-        os.getcwd() #return the current working directory
-           
-        for root, dirs, files in os.walk(os.getcwd()):
-            if db_name in files:  # wenn es eine Datenbank für die Karteibox gibt wird sie aufgerufen                         
-                self.win = KarteiWahl(application=app)
-                self.win.present()
-                break
-            else:
-                self.win = KarteiNeu(application=app)
-                self.win.present()
-                break '''
-        
+     
         self.win = KarteiWahlUndNeu(application=app)
         self.win.present()
         
