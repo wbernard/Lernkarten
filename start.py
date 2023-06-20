@@ -176,7 +176,6 @@ class KarteiWahlUndNeu(Gtk.Window):
 
         self.oeffne_kartei()
 
-
     def oeffne_kartei(self):
         win1 = KarteiWahlUndNeu()
         win1.hide()  # schließt das Fenster der Karteikartenbox
