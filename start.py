@@ -45,12 +45,6 @@ class KarteiWahlUndNeu(Gtk.Window):
         self.menu_button.set_icon_name(icon_name='open-menu-symbolic')
         self.menu_button.set_menu_model(menu_model=self.menu_button_model)
         self.headerbar.pack_end(child=self.menu_button)
-
-        # das ist das dropdown-menu links in der Kopfleiste
-        self.savedesktop_mode_dropdwn = Gtk.DropDown.new_from_strings( \
-            "save_config" )
-        #self.savedesktop_mode_dropdwn.connect('notify::selected-item', \
-            #self.change_savedesktop_mode)
         
         # Primary layout
         self.pBox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
@@ -101,7 +95,6 @@ class KarteiWahlUndNeu(Gtk.Window):
         self.toast.connect('dismissed', self.on_toast_dismissed)
         
         self.create_window()
-        self.headerbar.pack_start(self.savedesktop_mode_dropdwn)
         
     def celldata(self, col, cell, mdl, itr, i):   # Formattiert die Ausgabe der Datenansicht
     # col = Columnn, cell = Cell, mdl = model, itr = iter, i = column number
