@@ -187,36 +187,36 @@ class KarteiWahlUndNeu(Gtk.Window):
     def neue_kartei(self, w):                
         name = self.eing1.get_text()
         os.getcwd() #return the current working directory
-        print (name)  
-        for root, dirs, files in os.walk(os.getcwd()):
-            if 'karteibox.db' in files:  # wenn es eine Datenbank für die Karteibox gibt wird sie aufgerufen                         
-                conn = sqlite3.connect('karteibox.db')        
-                c = conn.cursor() # eine cursor instanz erstellen
-                c.execute("""INSERT INTO karteibox VALUES (
+        print (name)
+        
+        if os.path.isfile(os.getcwd() + '/karteibox.db'):  # wenn es eine Datenbank für die Karteibox gibt wird sie aufgerufen                         
+            conn = sqlite3.connect('karteibox.db')        
+            c = conn.cursor() # eine cursor instanz erstellen
+            c.execute("""INSERT INTO karteibox VALUES (
                             :kartei, :karte_vorn, :karte_hinten)""",              
                             {'kartei': name, 'karte_vorn': ' ',
                              'karte_hinten': ' '})
-                print(name)
-                conn.commit()    # Änderungen mitteilen
-                for row in c.execute("select * from karteibox"):
-                    print (row)
-                break
-            else:
-                conn = sqlite3.connect('karteibox.db')        
-                c = conn.cursor() # eine cursor instanz erstellen
-                # Tabelle mit Karteien
-                c.execute("""CREATE TABLE if not exists karteibox (
+            print(name)
+            conn.commit()    # Änderungen mitteilen
+            for row in c.execute("select * from karteibox"):
+                print (row)
+         
+        else:
+            conn = sqlite3.connect('karteibox.db')        
+            c = conn.cursor() # eine cursor instanz erstellen
+            # Tabelle mit Karteien
+            c.execute("""CREATE TABLE if not exists karteibox (
                                   kartei TEXT, karte_vorn TEXT, karte_hinten TEXT)""")
-                c.execute("""INSERT INTO karteibox VALUES (
+            c.execute("""INSERT INTO karteibox VALUES (
                             :kartei, :karte_vorn, :karte_hinten)""",              
                             {'kartei': name, 'karte_vorn': ' ',
                              'karte_hinten': ' '})
-                print(name)
-                conn.commit()    # Änderungen mitteilen
-                for row in c.execute("select * from karteibox"):
-                    print (row)
-                conn.close()   # Verbindung schließen
-
+            print(name, 'pip')
+            conn.commit()    # Änderungen mitteilen
+            for row in c.execute("select * from karteibox"):
+                 print (row)
+            conn.close()   # Verbindung schließen
+               
         win1 = KarteiWahlUndNeu()
         win1.hide()  # schließt das Fenster der Karteikartenbox
 
