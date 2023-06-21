@@ -67,7 +67,7 @@ class KarteiWahlUndNeu(Gtk.Window):
         name_spalte = "Doppelklick öffnet Kartei" 
         renderer = Gtk.CellRendererText(xalign=0.0, editable=False)
         column = Gtk.TreeViewColumn(name_spalte, renderer, text=True)
-        column.set_cell_data_func(renderer, self.celldata, func_data=True)
+        column.set_cell_data_func(renderer, self.formatiere_zellen, func_data=True)
         self.list_ansicht.append_column(column)
    
         self.list_ansicht.set_property('activate-on-single-click', False) # Reihe wird mit einem Klick aktiv
@@ -96,12 +96,9 @@ class KarteiWahlUndNeu(Gtk.Window):
         
         self.create_window()
         
-    def celldata(self, col, cell, mdl, itr, i):   # Formatiert die Ausgabe der Datenansicht
+    def formatiere_zellen(self, col, cell, mdl, itr, i):   # Formatiert die Ausgabe der Datenansicht
     # col = Columnn, cell = Cell, mdl = model, itr = iter, i = column number
     # column is provided by the function, but not used
-        value = mdl.get(itr,i)[0]
-        if type(value) is not str:
-            cell.set_property('text',f'{value+0.005:.2f}')  # Anzahl der Kommastellen
         path = mdl.get_path(itr)
         row = path[0]
         colors = ['white', 'lightgrey']
@@ -113,15 +110,11 @@ class KarteiWahlUndNeu(Gtk.Window):
        # eine cursor instanz erstellen
         c = conn.cursor()
 
-        #self.kartei_liste = Gtk.ListStore(int, str)  # Liste der vorhandenen Karteien
         c.execute("select rowid, kartei from karteibox")   # die originale id und der Karteiname wird geholt
         liste = c.fetchall()
-            #self.kartei_liste.append(row)
-        print ('Liste', liste)
         self.kartei_liste = Gtk.ListStore(int, str)  # Liste der vorhandenen Karteien
         self.alle_karteien = []
         for zeile in liste:
-            #print('Kartei', zeile) 
             if not list(zeile)[1] in self.alle_karteien: # nur neue Karteien kommen auf die Liste
                 self.alle_karteien.append(list(zeile)[1])
         n = 0
@@ -129,9 +122,6 @@ class KarteiWahlUndNeu(Gtk.Window):
             weitere_kartei = [n,kartei]
             self.kartei_liste.append(weitere_kartei)
             n += 1
-                
-        print('alle_karteien',self.alle_karteien)
-        #print('LIST-KARTEI',list(kartei)[1])
 
         conn.commit()
         conn.close()   # Verbindung schließen
@@ -634,3 +624,4 @@ class MyApp(Adw.Application):
         
 app = MyApp()
 app.run(sys.argv)
+
