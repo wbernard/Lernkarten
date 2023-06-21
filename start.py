@@ -96,7 +96,7 @@ class KarteiWahlUndNeu(Gtk.Window):
         
         self.create_window()
         
-    def celldata(self, col, cell, mdl, itr, i):   # Formattiert die Ausgabe der Datenansicht
+    def celldata(self, col, cell, mdl, itr, i):   # Formatiert die Ausgabe der Datenansicht
     # col = Columnn, cell = Cell, mdl = model, itr = iter, i = column number
     # column is provided by the function, but not used
         value = mdl.get(itr,i)[0]
