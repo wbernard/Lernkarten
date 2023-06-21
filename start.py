@@ -70,7 +70,7 @@ class KarteiWahlUndNeu(Gtk.Window):
         column.set_cell_data_func(renderer, self.formatiere_zellen, func_data=True)
         self.list_ansicht.append_column(column)
    
-        self.list_ansicht.set_property('activate-on-single-click', False) # Reihe wird mit einem Klick aktiv
+        self.list_ansicht.set_property('activate-on-single-click', False) # Reihe wird nur mit Doppelklick aktiv
         self.list_ansicht.connect('row-activated', self.auswahl)
         
         self.eing1 = Gtk.Entry()    # Eingabefenster
@@ -151,9 +151,7 @@ class KarteiWahlUndNeu(Gtk.Window):
         selection = self.list_ansicht.get_selection()
         selected = selection.get_selected()
         model = self.list_ansicht.get_model() # ListStore der Ansicht
-        #print(zeile)
         zeiger = model.get_iter(zeile)  # Adresse zur gewählten Zeile
-        #print(zeiger, len(model))
         werte = []
         for i in range(2):
             wert = model.get_value(zeiger, i)
@@ -177,36 +175,27 @@ class KarteiWahlUndNeu(Gtk.Window):
     def neue_kartei(self, w):                
         name = self.eing1.get_text()
         os.getcwd() #return the current working directory
-        print (name)
-        
         if os.path.isfile(os.getcwd() + '/karteibox.db'):  # wenn es eine Datenbank für die Karteibox gibt wird sie aufgerufen                         
             conn = sqlite3.connect('karteibox.db')        
             c = conn.cursor() # eine cursor instanz erstellen
             c.execute("""INSERT INTO karteibox VALUES (
-                            :kartei, :karte_vorn, :karte_hinten)""",              
-                            {'kartei': name, 'karte_vorn': ' ',
-                             'karte_hinten': ' '})
-            print(name)
-            conn.commit()    # Änderungen mitteilen
-            for row in c.execute("select * from karteibox"):
-                print (row)
-         
+                :kartei, :karte_vorn, :karte_hinten)""",              
+                {'kartei': name, 'karte_vorn': ' ',
+                'karte_hinten': ' '})
+            conn.commit()    # Änderungen mitteilen        
         else:
             conn = sqlite3.connect('karteibox.db')        
             c = conn.cursor() # eine cursor instanz erstellen
             # Tabelle mit Karteien
             c.execute("""CREATE TABLE if not exists karteibox (
-                                  kartei TEXT, karte_vorn TEXT, karte_hinten TEXT)""")
+                kartei TEXT, karte_vorn TEXT, karte_hinten TEXT)""")
             c.execute("""INSERT INTO karteibox VALUES (
-                            :kartei, :karte_vorn, :karte_hinten)""",              
-                            {'kartei': name, 'karte_vorn': ' ',
-                             'karte_hinten': ' '})
-            print(name, 'pip')
+                :kartei, :karte_vorn, :karte_hinten)""",              
+                {'kartei': name, 'karte_vorn': ' ',
+                'karte_hinten': ' '})
             conn.commit()    # Änderungen mitteilen
-            for row in c.execute("select * from karteibox"):
-                 print (row)
             conn.close()   # Verbindung schließen
-               
+
         win1 = KarteiWahlUndNeu()
         win1.hide()  # schließt das Fenster der Karteikartenbox
 
@@ -309,13 +298,10 @@ class KartenListe(Gtk.Window):
         c.execute("select * from karteibox where kartei=:c", {"c": self.name})   # die originale id und der Karteiname wird geholt
         liste = c.fetchall()
             #self.kartei_liste.append(row)
-        print ('liste', liste) # alle Karten der Kartei
         self.alle_karten = []
         for zeile in liste:
             if list(zeile)[1] != ' ':  # ergibt Liste aller Karten mit Namen
                 self.alle_karten.append(list(zeile)[1])
-                
-        print('alle_karten',self.alle_karten)
 
         self.karten_liste = Gtk.ListStore(int, str)  # Liste der vorhandenen Karteien
         n = 0
@@ -358,9 +344,7 @@ class KartenListe(Gtk.Window):
         selection = self.list_ansicht.get_selection()
         selected = selection.get_selected()
         model = self.list_ansicht.get_model() # ListStore der Ansicht
-        #print(zeile)
         zeiger = model.get_iter(zeile)  # Adresse zur gewählten Zeile
-        #print(zeiger, len(model))
         werte = []
         for i in range(2):  # in der karten_liste sind nur 2 Spalten oid und name
             wert = model.get_value(zeiger, i)
@@ -476,10 +460,7 @@ class KarteNeu(Gtk.Window):
                     :kartei, :karte_vorn, :karte_hinten)""",              
                     {'kartei': name, 'karte_vorn': kart ,
                     'karte_hinten': kart_hint})
-        print(name)
         conn.commit()    # Änderungen mitteilen
-        for row in c.execute("select * from karteibox"):
-            print (row)
         conn.close()   # Verbindung schließen
 
         win3 = KarteNeu(self.name)
@@ -594,10 +575,7 @@ class Karte(Gtk.Window):
                     :kartei, :karte_vorn, :karte_hinten)""",              
                     {'kartei': name, 'karte_vorn': kart ,
                     'karte_hinten': kart_hint})
-        print(name)
         conn.commit()    # Änderungen mitteilen
-        for row in c.execute("select * from karteibox"):
-            print (row)
         conn.close()   # Verbindung schließen
         
         zu_kartliste()
