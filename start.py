@@ -8,25 +8,48 @@ import sqlite3
 
 from gi.repository import Gtk, Adw, Gio, GLib, Gdk, GObject
 
+
+
 '''
-Klassen:
+Diese Datei enthält das Startfenser in dem dann alle
+Fenster enthalten sind:
 - KarteiWahlUndNeu
 - KartenListe
 - KarteNeu
 - Karte
 - Spiel
 '''       
+class StartFenster(Gtk.Window):
 
-class KarteiWahlUndNeu(Gtk.Window):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.set_title("Karteien")
+        self.set_title("Karteibox")
         self.headerbar = Gtk.HeaderBar.new()
         self.set_titlebar(titlebar=self.headerbar)
         self.application = kwargs.get('application')
         
         self.set_default_size(400, 400)
         self.set_size_request(400, 400)
+
+        # App menu  - Menu in der Kopfleiste   
+        self.menu_button_model = Gio.Menu()
+        self.menu_button_model.append("about_app", 'app.about')
+        self.menu_button = Gtk.MenuButton.new()
+        self.menu_button.set_icon_name(icon_name='open-menu-symbolic')
+        self.menu_button.set_menu_model(menu_model=self.menu_button_model)
+        self.headerbar.pack_end(child=self.menu_button)
+        
+        container = Gtk.Box()  # das ist der Container in den alles hineinkommt
+        self.set_child(container)
+        container.show()
+        
+        self.karteiwahl = KarteiWahlUndNeu(self)
+        container.append(self.karteiwahl)
+
+class KarteiWahlUndNeu(Gtk.Box):
+    def __init__(self, parent_window):
+        super().__init__(spacing=10)
+        self.__parent_window = parent_window
 
         db_name = 'karteibox.db'
         os.getcwd() #return the current working directory
@@ -37,15 +60,7 @@ class KarteiWahlUndNeu(Gtk.Window):
                 break
             else:
                 self.kartei_liste = Gtk.ListStore(int, str)
-        
-        # App menu  - Menu in der Kopfleiste   
-        self.menu_button_model = Gio.Menu()
-        self.menu_button_model.append("about_app", 'app.about')
-        self.menu_button = Gtk.MenuButton.new()
-        self.menu_button.set_icon_name(icon_name='open-menu-symbolic')
-        self.menu_button.set_menu_model(menu_model=self.menu_button_model)
-        self.headerbar.pack_end(child=self.menu_button)
-        
+               
         # Primary layout
         self.pBox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
         self.pBox.set_halign(Gtk.Align.CENTER)
@@ -87,7 +102,7 @@ class KarteiWahlUndNeu(Gtk.Window):
         self.toast_overlay.set_margin_bottom(margin=1)
         self.toast_overlay.set_margin_start(margin=1)
         
-        self.set_child(self.toast_overlay)
+        self.append(self.toast_overlay)
         self.toast_overlay.set_child(self.pBox)
         
         self.toast = Adw.Toast.new(title='')
@@ -165,7 +180,7 @@ class KarteiWahlUndNeu(Gtk.Window):
         self.oeffne_kartei()
 
     def oeffne_kartei(self):
-        win1 = KarteiWahlUndNeu()
+        win1 = KarteiWahlUndNeu(self)
         win1.hide()  # schließt das Fenster der Karteikartenbox
 
         win2 = KartenListe(self.name)
@@ -207,17 +222,12 @@ class KarteiWahlUndNeu(Gtk.Window):
         os.popen("rm -rf %s/*" % CACHE)
         os.popen("rm -rf {}/SaveDesktop/.{}/*".format(download_dir, date.today()))
        
-class KartenListe(Gtk.Window):
-    def __init__(self, name, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.set_title(name)
-        self.headerbar = Gtk.HeaderBar.new()
-        self.set_titlebar(titlebar=self.headerbar)
-        self.application = kwargs.get('application')
+class KartenListe(Gtk.Box):
+    def __init__(self, parent_window, name):
+        super().__init__(spacing=10)
+        self.__parent_window = parent_window
         self.name = name
         
-        self.set_default_size(400, 400)
-        self.set_size_request(400, 400)
         
         self.hole_karten()
 
@@ -596,7 +606,7 @@ class MyApp(Adw.Application):
         self.connect('activate', self.on_activate)
     
     def on_activate(self, app):
-        self.win = KarteiWahlUndNeu(application=app)
+        self.win = StartFenster(application=app)
         self.win.present()
         
         
