@@ -8,7 +8,6 @@ import sqlite3
 
 from gi.repository import Gtk, Adw, Gio, GLib, Gdk, GObject
 
-from kartenlist import*
 
 '''
 Diese Datei enthält das Startfenser in dem dann alle
@@ -464,13 +463,9 @@ class KarteNeu(Gtk.Window):
 
         kart = KarteNeu(self.name)
         kart.close()
-        self.KarteiWahlUndNeu__parent_window.container.remove(
-            self.KarteiWahlUndNeu__parent_window.kartenliste)
+        self.KarteiWahlUndNeu__parent_window.container.remove(self.KarteiWahlUndNeu__parent_window.kartenliste)
         self.KarteiWahlUndNeu__parent_window.container.hide()
         
-        #win2 = KartenListe(self.name)
-        #win2.present()  # schließt das Fenster der Karteikartenbox
-
     def on_toast_dismissed(self, toast):
         os.popen("rm -rf %s/*" % CACHE)
         os.popen("rm -rf {}/SaveDesktop/.{}/*".format(download_dir, date.today()))
@@ -546,12 +541,6 @@ class Karte(Gtk.Window):
         self.saveButton.connect("clicked", self.speichere_karte)
         self.btnBox.append(self.saveButton)
 
-        self.Taste = Gtk.Button.new_with_label("Zurück zur Kartenliste")
-        self.Taste.add_css_class("suggested-action")
-        self.Taste.add_css_class("pill")
-        self.Taste.connect("clicked", self.zu_kartliste)
-        self.btnBox.append(self.Taste)
-
     def kart_daten(self):
         name = self.name
         kart = self.kart
@@ -568,6 +557,7 @@ class Karte(Gtk.Window):
 
     def speichere_karte(self, w):
         name = self.name
+        print(name)
         kart = self.eing1.get_text()
         kart_hint = self.eing2.get_text()
         os.getcwd() #return the current working directory
@@ -580,14 +570,7 @@ class Karte(Gtk.Window):
                     'karte_hinten': kart_hint})
         conn.commit()    # Änderungen mitteilen
         conn.close()   # Verbindung schließen
-        
-        zu_kartliste()
-
-    def zu_kartliste(self,w):
-        win4 = Karte(self.name, self.kart)
-        win4.hide()   
-        win2 = KartenListe(self.name)
-        win2.present()  
+        print(name, kart, kart_hint)
         
     def on_toast_dismissed(self, toast):
         os.popen("rm -rf %s/*" % CACHE)
