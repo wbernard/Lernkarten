@@ -215,10 +215,8 @@ class KarteiWahlUndNeu(Gtk.Box):
             conn.commit()    # Änderungen mitteilen
             conn.close()   # Verbindung schließen
         self.__parent_window.container.remove(self.__parent_window.karteiwahl)
-        self.__parent_window.container.hide()
         self.__parent_window.karteiwahl = KarteiWahlUndNeu(self.__parent_window)
         self.__parent_window.container.append(self.__parent_window.karteiwahl)
-        self.__parent_window.container.show()
         pass
         
     def on_toast_dismissed(self, toast):
