@@ -54,7 +54,7 @@ class KarteiWahlUndNeu(Gtk.Box):
     def __init__(self, parent_window):
         super().__init__(spacing=10)
         self.__parent_window = parent_window
-
+        
         db_name = 'karteibox.db'
         os.getcwd() #return the current working directory
            
@@ -214,11 +214,10 @@ class KarteiWahlUndNeu(Gtk.Box):
                 'karte_hinten': ' '})
             conn.commit()    # Änderungen mitteilen
             conn.close()   # Verbindung schließen
-
         self.__parent_window.container.remove(self.__parent_window.karteiwahl)
         self.__parent_window.container.hide()
-        self.karteiwahl = KarteiWahlUndNeu(self)
-        self.__parent_window.container.append(self.karteiwahl)
+        self.__parent_window.karteiwahl = KarteiWahlUndNeu(self.__parent_window)
+        self.__parent_window.container.append(self.__parent_window.karteiwahl)
         self.__parent_window.container.show()
         pass
         
