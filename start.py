@@ -186,7 +186,7 @@ class KarteiWahlUndNeu(Gtk.Box):
     def oeffne_kartei(self, *args):
         self.__parent_window.container.remove(self.__parent_window.karteiwahl)
         self.__parent_window.container.hide()
-        self.kartenliste = KartenListe(self, self.name)
+        self.kartenliste = KartenListe(self, self.__parent_window, self.name)
         self.__parent_window.container.append(self.kartenliste)
         self.__parent_window.container.show()
    
@@ -224,9 +224,10 @@ class KarteiWahlUndNeu(Gtk.Box):
         os.popen("rm -rf {}/SaveDesktop/.{}/*".format(download_dir, date.today()))
        
 class KartenListe(Gtk.Box):
-    def __init__(self, parent_window, name):
+    def __init__(self, parent_window, opa_window, name):
         super().__init__(spacing=10)
         self.__parent_window = parent_window
+        self.__opa_window = opa_window
         self.name = name
                
         self.hole_karten()
@@ -240,12 +241,10 @@ class KartenListe(Gtk.Box):
         # Primary layout
         self.pBox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
         self.pBox.set_halign(Gtk.Align.CENTER)
-        #self.pBox.set_valign(Gtk.Align.CENTER)
         self.pBox.set_margin_start(50)
         self.pBox.set_margin_end(50)
 
         self.sw = Gtk.ScrolledWindow()  # Fenster mit Rollbalken
-        #self.sw.set_shadow_type(Gtk.ShadowType.ETCHED_IN)
         self.sw.set_policy(Gtk.PolicyType.NEVER,Gtk.PolicyType.ALWAYS) # horizontal kein Balken, vertikal immer
         self.sw.set_size_request(150,200)
         self.pBox.append(self.sw)
@@ -361,12 +360,12 @@ class KartenListe(Gtk.Box):
         self.zeige_karte()
 
     def zeige_karte(self):        
-        kart = Karte(self.name, self.kart)
+        kart = Karte(self.name, self.kart, self.__parent_window, self.__opa_window)
         kart.present()   
         pass
 
     def neue_karte(self, w):
-        kart = KarteNeu(self.name)        
+        kart = KarteNeu(self.name, self.__parent_window, self.__opa_window)        
         kart.present()   
         
     def on_toast_dismissed(self, toast):
@@ -374,8 +373,12 @@ class KartenListe(Gtk.Box):
         os.popen("rm -rf {}/SaveDesktop/.{}/*".format(download_dir, date.today()))
        
 class KarteNeu(Gtk.Window):
-    def __init__(self, name, *args, **kwargs):
+    def __init__(self, name, parent_window, opa_window, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        
+        self.__parent_window = parent_window
+        self.__opa_window    = opa_window
+        
         self.set_title('Neue Karte '+name)
         self.headerbar = Gtk.HeaderBar.new()
         self.set_titlebar(titlebar=self.headerbar)
@@ -389,7 +392,6 @@ class KarteNeu(Gtk.Window):
         # Primary layout
         self.pBox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
         self.pBox.set_halign(Gtk.Align.CENTER)
-        #self.pBox.set_valign(Gtk.Align.CENTER)
         self.pBox.set_margin_start(20)
         self.pBox.set_margin_end(20)
   
@@ -398,7 +400,6 @@ class KarteNeu(Gtk.Window):
         self.eing1.add_css_class("card")
         self.eing1.set_margin_top(10)
         self.eing1.set_placeholder_text('Vorderseite der Karte')        
-        #self.eing1.set_text(self.kart)
         self.pBox.append(self.eing1)        
       
         self.eing2 = Gtk.Entry()    # Eingabefenster
@@ -406,8 +407,8 @@ class KarteNeu(Gtk.Window):
         self.eing2.add_css_class("card")
         self.eing2.set_margin_top(10)
         self.eing2.set_placeholder_text('Rückseite der Karte')
-        self.pBox.append(self.eing2)        
-
+        self.pBox.append(self.eing2)      
+    
         # Toast
         self.toast_overlay = Adw.ToastOverlay.new()
         self.toast_overlay.set_margin_top(margin=1)
@@ -426,7 +427,7 @@ class KarteNeu(Gtk.Window):
 
     # Show main layout
     def create_window(self):
-        
+    
         # Box für das Erstellen der Kartei
         self.saveBox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         self.pBox.append(self.saveBox)
@@ -437,14 +438,15 @@ class KarteNeu(Gtk.Window):
         self.btnBox.set_margin_end(40)
         self.saveBox.append(self.btnBox)
         
-        self.saveButton = Gtk.Button.new_with_label("Speichere neue Karte")
+        self.saveButton = Gtk.Button.new_with_label("Speichere neue Karte") # Knopf in der Buttonbox
         self.saveButton.add_css_class("suggested-action")
         self.saveButton.add_css_class("pill")
         self.saveButton.connect("clicked", self.speichere_karte)
         self.btnBox.append(self.saveButton)
-
+        
     def speichere_karte(self, w):
         name = self.name
+        print(self.name)
         kart = self.eing1.get_text()
         kart_hint = self.eing2.get_text()
         os.getcwd() #return the current working directory
@@ -458,23 +460,27 @@ class KarteNeu(Gtk.Window):
         conn.commit()    # Änderungen mitteilen
         conn.close()   # Verbindung schließen
 
-        kart = KarteNeu(self.name)
-        kart.close()
-        self.KarteiWahlUndNeu__parent_window.container.remove(self.KarteiWahlUndNeu__parent_window.kartenliste)
-        self.KarteiWahlUndNeu__parent_window.container.hide()
+        self.__opa_window.container.remove(self.__parent_window.kartenliste)
+        self.__parent_window.kartenliste = KartenListe(self.__parent_window, self.__opa_window, self.name)
+        self.__opa_window.container.append(self.__parent_window.kartenliste)
+        self.close()
         
     def on_toast_dismissed(self, toast):
         os.popen("rm -rf %s/*" % CACHE)
         os.popen("rm -rf {}/SaveDesktop/.{}/*".format(download_dir, date.today()))
 
 class Karte(Gtk.Window):
-    def __init__(self, name, kart, *args, **kwargs):
+    def __init__(self, name, kart, parent_window, opa_window,*args, **kwargs):
         super().__init__(*args, **kwargs)
+        
+        self.__parent_window = parent_window
+        self.__opa_window    = opa_window
+        
         self.set_title(name)
         self.headerbar = Gtk.HeaderBar.new()
         self.set_titlebar(titlebar=self.headerbar)
         self.application = kwargs.get('application')
-        self.name =name
+        self.name = name
         self.kart = kart
         
         self.set_default_size(300, 300)
@@ -547,6 +553,7 @@ class Karte(Gtk.Window):
             # Tabelle mit Karteien
         c.execute("select * from karteibox where kartei=:c and karte_vorn=:d", {"c": self.name, "d":self.kart})   # die originale id und der Karteiname wird geholt
         zeile = c.fetchall()
+        print(zeile)
         self.kart_hint = zeile[0][2]
         
         conn.commit()    # Änderungen mitteilen
@@ -554,9 +561,9 @@ class Karte(Gtk.Window):
 
     def speichere_karte(self, w):
         name = self.name
-        print(name)
         kart = self.eing1.get_text()
         kart_hint = self.eing2.get_text()
+        print(name, kart, kart_hint)
         os.getcwd() #return the current working directory
         conn = sqlite3.connect('karteibox.db')        
         c = conn.cursor() # eine cursor instanz erstellen
@@ -567,7 +574,11 @@ class Karte(Gtk.Window):
                     'karte_hinten': kart_hint})
         conn.commit()    # Änderungen mitteilen
         conn.close()   # Verbindung schließen
-        print(name, kart, kart_hint)
+
+        self.__opa_window.container.remove(self.__parent_window.kartenliste)
+        self.__parent_window.kartenliste = KartenListe(self.__parent_window, self.__opa_window, self.name)
+        self.__opa_window.container.append(self.__parent_window.kartenliste)
+        self.close()
         
     def on_toast_dismissed(self, toast):
         os.popen("rm -rf %s/*" % CACHE)
