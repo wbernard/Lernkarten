@@ -384,7 +384,6 @@ class KarteNeu(Gtk.Window):
         self.set_titlebar(titlebar=self.headerbar)
         self.application = kwargs.get('application')
         self.name =name
-        #self.kart = kart
         
         self.set_default_size(300, 300)
         self.set_size_request(00, 300)
@@ -553,9 +552,6 @@ class Karte(Gtk.Window):
         
 
     def kart_daten(self):
-        oid = self.oid
-        name = self.name
-        kart = self.kart
 
         conn = sqlite3.connect('karteibox.db')        
         c = conn.cursor() # eine cursor instanz erstellen
@@ -564,29 +560,27 @@ class Karte(Gtk.Window):
         zeile = c.fetchall()
         print('zeile in kart_daten', zeile)
         self.kart_hint = zeile[0][2]
-        print ('in kart_daten', oid, name, kart)
+        print ('in kart_daten', self.oid, self.name, self.kart)
         conn.commit()    # Änderungen mitteilen
         conn.close()   # Verbindung schließen
 
     def aendere_hinten(self,w):  # oid ist die ID der Zeile
-        oid = self.oid
-        name = self.name
-        kart = self.eing1.get_text()
         kart_hint = self.eing2.get_text()
-        print('in aendere', oid, name, kart, kart_hint)
+        print('in aendere', self.oid, self.name, self.kart, kart_hint)
         # Datenbank aktualisieren ---------------------
         conn =sqlite3.connect('karteibox.db')
         c = conn.cursor()
 
         # es folgt der auszuführende Befehl oid ist der primäre Schlüssel den sqlite kreirt hat
-        c.execute("""UPDATE karteibox SET karte_hinten = :kh WHERE oid = :oid""", {'kh': 'kartolin', 'oid': oid})
+        c.execute("""UPDATE karteibox SET karte_hinten = :kh WHERE oid = :oid""", {'kh': kart_hint, 'oid': self.oid})
+        #c.execute("""UPDATE karteibox SET karte_hinten = ? WHERE oid = ?""", ('halo', self.oid))
 
-        print (kart_hint, oid)
+        print (kart_hint, self.oid)
         # Änderungen mitteilen
         conn.commit()
         
         for row in c.execute("select * from karteibox"):
-            print ('zeilen', row, oid)
+            print ('zeilen', row)
         
         c.execute("select * from karteibox where karte_vorn=:b", {"b": "Meran"})
         suche = c.fetchall()
@@ -600,14 +594,14 @@ class Karte(Gtk.Window):
         self.close()
         
     def loesch_karte(self, w):
-        oid = self.oid
+        self.oid
         
         # mit existierender Datenbank verbinden und cursor Instanz kreiren
         conn =sqlite3.connect('karteibox.db')
         c = conn.cursor()
 
         # aus der Datenbank entfernen oid ist der primäre Schlüssl den sqlite kreirt hat
-        c.execute('DELETE from karteibox WHERE oid=' + str(oid))
+        c.execute('DELETE from karteibox WHERE oid=' + str(self.oid))
 
         # Änderungen mitteilen
         conn.commit()
