@@ -360,7 +360,7 @@ class KartenListe(Gtk.Box):
         self.zeige_karte()
 
     def zeige_karte(self):        
-        kart = Karte(self.name, self.kart, self.__parent_window, self.__opa_window)
+        kart = Karte(self.oid, self.name, self.kart, self.__parent_window, self.__opa_window)
         kart.present()   
         pass
 
@@ -470,7 +470,7 @@ class KarteNeu(Gtk.Window):
         os.popen("rm -rf {}/SaveDesktop/.{}/*".format(download_dir, date.today()))
 
 class Karte(Gtk.Window):
-    def __init__(self, name, kart, parent_window, opa_window,*args, **kwargs):
+    def __init__(self, oid, name, kart, parent_window, opa_window,*args, **kwargs):
         super().__init__(*args, **kwargs)
         
         self.__parent_window = parent_window
@@ -482,6 +482,7 @@ class Karte(Gtk.Window):
         self.application = kwargs.get('application')
         self.name = name
         self.kart = kart
+        self.oid = oid
         
         self.set_default_size(300, 300)
         self.set_size_request(300, 300)
@@ -541,10 +542,18 @@ class Karte(Gtk.Window):
         self.saveButton = Gtk.Button.new_with_label("Ändere Rückseite")
         self.saveButton.add_css_class("suggested-action")
         self.saveButton.add_css_class("pill")
-        self.saveButton.connect("clicked", self.speichere_karte)
+        self.saveButton.connect("clicked", self.aendere_hinten)
         self.btnBox.append(self.saveButton)
 
+        self.loeschBut = Gtk.Button.new_with_label("Lösche Karte")
+        self.loeschBut.add_css_class("suggested-action")
+        self.loeschBut.add_css_class("pill")
+        self.loeschBut.connect("clicked", self.loesch_karte)
+        self.btnBox.append(self.loeschBut)
+        
+
     def kart_daten(self):
+        oid = self.oid
         name = self.name
         kart = self.kart
 
@@ -553,32 +562,57 @@ class Karte(Gtk.Window):
             # Tabelle mit Karteien
         c.execute("select * from karteibox where kartei=:c and karte_vorn=:d", {"c": self.name, "d":self.kart})   # die originale id und der Karteiname wird geholt
         zeile = c.fetchall()
-        print(zeile)
+        print('zeile in kart_daten', zeile)
         self.kart_hint = zeile[0][2]
-        
+        print ('in kart_daten', oid, name, kart)
         conn.commit()    # Änderungen mitteilen
         conn.close()   # Verbindung schließen
 
-    def speichere_karte(self, w):
+    def aendere_hinten(self,w):  # oid ist die ID der Zeile
+        oid = self.oid
         name = self.name
         kart = self.eing1.get_text()
         kart_hint = self.eing2.get_text()
-        print(name, kart, kart_hint)
-        os.getcwd() #return the current working directory
-        conn = sqlite3.connect('karteibox.db')        
-        c = conn.cursor() # eine cursor instanz erstellen
-            # Tabelle mit Karteien
-        c.execute("""INSERT INTO karteibox VALUES (
-                    :kartei, :karte_vorn, :karte_hinten)""",              
-                    {'kartei': name, 'karte_vorn': kart ,
-                    'karte_hinten': kart_hint})
-        conn.commit()    # Änderungen mitteilen
-        conn.close()   # Verbindung schließen
+        print('in aendere', oid, name, kart, kart_hint)
+        # Datenbank aktualisieren ---------------------
+        conn =sqlite3.connect('karteibox.db')
+        c = conn.cursor()
 
+        # es folgt der auszuführende Befehl oid ist der primäre Schlüssel den sqlite kreirt hat
+        c.execute("""UPDATE karteibox SET karte_hinten = :kh WHERE oid = :oid""", {'kh': 'kartolin', 'oid': oid})
+
+        print (kart_hint, oid)
+        # Änderungen mitteilen
+        conn.commit()
+        
+        for row in c.execute("select * from karteibox"):
+            print ('zeilen', row, oid)
+        
+        c.execute("select * from karteibox where karte_vorn=:b", {"b": "Meran"})
+        suche = c.fetchall()
+        print ('die Zeile', suche)
+        # Verbindung schließen
+        conn.close()           # Ende Aktualisierung Datenbank
+        
         self.__opa_window.container.remove(self.__parent_window.kartenliste)
         self.__parent_window.kartenliste = KartenListe(self.__parent_window, self.__opa_window, self.name)
         self.__opa_window.container.append(self.__parent_window.kartenliste)
         self.close()
+        
+    def loesch_karte(self, w):
+        oid = self.oid
+        
+        # mit existierender Datenbank verbinden und cursor Instanz kreiren
+        conn =sqlite3.connect('karteibox.db')
+        c = conn.cursor()
+
+        # aus der Datenbank entfernen oid ist der primäre Schlüssl den sqlite kreirt hat
+        c.execute('DELETE from karteibox WHERE oid=' + str(oid))
+
+        # Änderungen mitteilen
+        conn.commit()
+        # Verbindung schließen
+        conn.close()           # Ende Aktualisierung Datenbank
         
     def on_toast_dismissed(self, toast):
         os.popen("rm -rf %s/*" % CACHE)
