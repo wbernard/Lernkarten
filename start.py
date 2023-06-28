@@ -304,9 +304,9 @@ class KartenListe(Gtk.Box):
             if list(zeile)[1] != ' ':  # ergibt Liste aller Karten mit Namen
                 self.alle_karten.append(list(zeile)[1])
 
-        self.karten_liste = Gtk.ListStore(int, str)  # Liste der vorhandenen Karteien
+        self.karten_liste = Gtk.ListStore(int, str)  # Liste der vorhandenen Karten
         n = 0
-        for karte in self.alle_karten: # in der ListStore ist jede Kartei nur einmal
+        for karte in self.alle_karten: # in der ListStore ist jede Karte nur einmal
             weitere_karte = [n,karte]
             self.karten_liste.append(weitere_karte)
             n += 1
@@ -469,7 +469,7 @@ class KarteNeu(Gtk.Window):
         os.popen("rm -rf {}/SaveDesktop/.{}/*".format(download_dir, date.today()))
 
 class Karte(Gtk.Window):
-    def __init__(self, oid, name, kart, parent_window, opa_window,*args, **kwargs):
+    def __init__(self, oid, name, kart, parent_window, opa_window, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
         self.__parent_window = parent_window
@@ -552,7 +552,6 @@ class Karte(Gtk.Window):
         
 
     def kart_daten(self):
-
         conn = sqlite3.connect('karteibox.db')        
         c = conn.cursor() # eine cursor instanz erstellen
             # Tabelle mit Karteien
@@ -560,22 +559,21 @@ class Karte(Gtk.Window):
         zeile = c.fetchall()
         print('zeile in kart_daten', zeile)
         self.kart_hint = zeile[0][2]
-        print ('in kart_daten', self.oid, self.name, self.kart)
-        conn.commit()    # Änderungen mitteilen
+        print ('in kart_daten', self.oid, self.name, self.kart, self.kart_hint)
         conn.close()   # Verbindung schließen
 
     def aendere_hinten(self,w):  # oid ist die ID der Zeile
-        kart_hint = self.eing2.get_text()
-        print('in aendere', self.oid, self.name, self.kart, kart_hint)
+        self.kart_hint = self.eing2.get_text()
+        print('in aendere', self.oid, self.name, self.kart, self.kart_hint)
         # Datenbank aktualisieren ---------------------
         conn =sqlite3.connect('karteibox.db')
         c = conn.cursor()
 
         # es folgt der auszuführende Befehl oid ist der primäre Schlüssel den sqlite kreirt hat
-        c.execute("""UPDATE karteibox SET karte_hinten = :kh WHERE oid = :oid""", {'kh': kart_hint, 'oid': self.oid})
-        #c.execute("""UPDATE karteibox SET karte_hinten = ? WHERE oid = ?""", ('halo', self.oid))
+        c.execute("""UPDATE karteibox SET karte_hinten = :kh WHERE oid = :oid""", {'kh': self.kart_hint, 'oid': self.oid})
+        c.execute("""UPDATE karteibox SET karte_hinten = ? WHERE oid = ?""", (self.kart_hint, self.oid))
 
-        print (kart_hint, self.oid)
+        print (self.kart_hint, self.oid)
         # Änderungen mitteilen
         conn.commit()
         
@@ -594,7 +592,7 @@ class Karte(Gtk.Window):
         self.close()
         
     def loesch_karte(self, w):
-        self.oid
+        print('in loesch', self.oid, self.name, self.kart, self.kart_hint)
         
         # mit existierender Datenbank verbinden und cursor Instanz kreiren
         conn =sqlite3.connect('karteibox.db')
@@ -605,8 +603,16 @@ class Karte(Gtk.Window):
 
         # Änderungen mitteilen
         conn.commit()
-        # Verbindung schließen
-        conn.close()           # Ende Aktualisierung Datenbank
+        
+        for row in c.execute("select * from karteibox"):    #liest alle Zeilen aus karteibox aus
+            print ('nach löschen zeilen', row)
+            
+        conn.close() # Ende Aktualisierung Datenbank
+              
+        self.__opa_window.container.remove(self.__parent_window.kartenliste)
+        self.__parent_window.kartenliste = KartenListe(self.__parent_window, self.__opa_window, self.name)
+        self.__opa_window.container.append(self.__parent_window.kartenliste)
+        self.close()
         
     def on_toast_dismissed(self, toast):
         os.popen("rm -rf %s/*" % CACHE)
