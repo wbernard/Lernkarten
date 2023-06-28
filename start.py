@@ -142,7 +142,7 @@ class KarteiWahlUndNeu(Gtk.Box):
             self.kartei_liste.append(weitere_kartei)
             n += 1
 
-        conn.commit()
+        #conn.commit()
         conn.close()   # Verbindung schließen
     
     # Show main layout
@@ -311,7 +311,7 @@ class KartenListe(Gtk.Box):
             self.karten_liste.append(weitere_karte)
             n += 1
 
-        conn.commit()
+        #conn.commit()
         conn.close()   # Verbindung schließen
     
     def change_savedesktop_mode(self, w, pspec):
@@ -570,19 +570,14 @@ class Karte(Gtk.Window):
         c = conn.cursor()
 
         # es folgt der auszuführende Befehl oid ist der primäre Schlüssel den sqlite kreirt hat
-        c.execute("""UPDATE karteibox SET karte_hinten = :kh WHERE oid = :oid""", {'kh': self.kart_hint, 'oid': self.oid})
-        c.execute("""UPDATE karteibox SET karte_hinten = ? WHERE oid = ?""", (self.kart_hint, self.oid))
+        c.execute("UPDATE karteibox SET karte_hinten = :kh WHERE kartei=:c and karte_vorn=:d", {"kh": self.kart_hint,"c": self.name, "d":self.kart})
 
-        print (self.kart_hint, self.oid)
         # Änderungen mitteilen
         conn.commit()
         
-        for row in c.execute("select * from karteibox"):
+        for row in c.execute("select * from karteibox"):   #liest alle Zeilen aus karteibox aus
             print ('zeilen', row)
         
-        c.execute("select * from karteibox where karte_vorn=:b", {"b": "Meran"})
-        suche = c.fetchall()
-        print ('die Zeile', suche)
         # Verbindung schließen
         conn.close()           # Ende Aktualisierung Datenbank
         
@@ -592,14 +587,12 @@ class Karte(Gtk.Window):
         self.close()
         
     def loesch_karte(self, w):
-        print('in loesch', self.oid, self.name, self.kart, self.kart_hint)
-        
         # mit existierender Datenbank verbinden und cursor Instanz kreiren
         conn =sqlite3.connect('karteibox.db')
         c = conn.cursor()
 
         # aus der Datenbank entfernen oid ist der primäre Schlüssl den sqlite kreirt hat
-        c.execute('DELETE from karteibox WHERE oid=' + str(self.oid))
+        c.execute("DELETE from karteibox WHERE kartei=:c and karte_vorn=:d", {"c": self.name, "d":self.kart})
 
         # Änderungen mitteilen
         conn.commit()
