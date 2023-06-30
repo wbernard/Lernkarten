@@ -45,10 +45,6 @@ class StartFenster(Gtk.Window):
         self.karteiwahl = KarteiWahlUndNeu(self)
         self.container.append(self.karteiwahl)
 
-        #self.name = 'Karteiname'
-        #self.kartenliste = KartenListe(self, self.name)
-        #container.append(self.kartenliste)
-
 
 class KarteiWahlUndNeu(Gtk.Box):
     def __init__(self, parent_window):
@@ -142,7 +138,6 @@ class KarteiWahlUndNeu(Gtk.Box):
             self.kartei_liste.append(weitere_kartei)
             n += 1
 
-        #conn.commit()
         conn.close()   # Verbindung schließen
     
     # Show main layout
@@ -311,7 +306,6 @@ class KartenListe(Gtk.Box):
             self.karten_liste.append(weitere_karte)
             n += 1
 
-        #conn.commit()
         conn.close()   # Verbindung schließen
     
     def change_savedesktop_mode(self, w, pspec):
@@ -355,8 +349,6 @@ class KartenListe(Gtk.Box):
         # Ausgabe in die Eingabefelder
         self.kart = werte[1]
         
-        #self.eing1.set_placeholder_text(self.kart)
-
         self.zeige_karte()
 
     def zeige_karte(self):        
@@ -550,7 +542,6 @@ class Karte(Gtk.Window):
         self.loeschBut.connect("clicked", self.loesch_karte)
         self.btnBox.append(self.loeschBut)
         
-
     def kart_daten(self):
         conn = sqlite3.connect('karteibox.db')        
         c = conn.cursor() # eine cursor instanz erstellen
@@ -619,7 +610,6 @@ class MyApp(Adw.Application):
     def on_activate(self, app):
         self.win = StartFenster(application=app)
         self.win.present()
-        
         
 app = MyApp()
 app.run(sys.argv)
