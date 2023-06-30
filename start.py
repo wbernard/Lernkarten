@@ -437,7 +437,6 @@ class KarteNeu(Gtk.Window):
         
     def speichere_karte(self, w):
         name = self.name
-        print(self.name)
         kart = self.eing1.get_text()
         kart_hint = self.eing2.get_text()
         os.getcwd() #return the current working directory
@@ -548,14 +547,11 @@ class Karte(Gtk.Window):
             # Tabelle mit Karteien
         c.execute("select * from karteibox where kartei=:c and karte_vorn=:d", {"c": self.name, "d":self.kart})   # die originale id und der Karteiname wird geholt
         zeile = c.fetchall()
-        print('zeile in kart_daten', zeile)
         self.kart_hint = zeile[0][2]
-        print ('in kart_daten', self.oid, self.name, self.kart, self.kart_hint)
         conn.close()   # Verbindung schließen
 
     def aendere_hinten(self,w):  # oid ist die ID der Zeile
         self.kart_hint = self.eing2.get_text()
-        print('in aendere', self.oid, self.name, self.kart, self.kart_hint)
         # Datenbank aktualisieren ---------------------
         conn =sqlite3.connect('karteibox.db')
         c = conn.cursor()
@@ -565,9 +561,6 @@ class Karte(Gtk.Window):
 
         # Änderungen mitteilen
         conn.commit()
-        
-        for row in c.execute("select * from karteibox"):   #liest alle Zeilen aus karteibox aus
-            print ('zeilen', row)
         
         # Verbindung schließen
         conn.close()           # Ende Aktualisierung Datenbank
@@ -588,9 +581,6 @@ class Karte(Gtk.Window):
         # Änderungen mitteilen
         conn.commit()
         
-        for row in c.execute("select * from karteibox"):    #liest alle Zeilen aus karteibox aus
-            print ('nach löschen zeilen', row)
-            
         conn.close() # Ende Aktualisierung Datenbank
               
         self.__opa_window.container.remove(self.__parent_window.kartenliste)
