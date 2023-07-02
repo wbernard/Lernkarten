@@ -8,19 +8,21 @@ import sqlite3
 
 from gi.repository import Gtk, Adw, Gio, GLib, Gdk, GObject
 
+
 '''
-Klassen:
+Diese Datei enthält das Startfenser in dem dann alle
+Fenster enthalten sind:
 - KarteiWahlUndNeu
 - KartenListe
 - KarteNeu
 - Karte
 - Spiel
 '''       
+class StartFenster(Gtk.Window):
 
-class KarteiWahlUndNeu(Gtk.Window):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.set_title("Karteien")
+        super(StartFenster, self).__init__(*args, **kwargs)
+        self.set_title("Karteibox")
         self.headerbar = Gtk.HeaderBar.new()
         self.set_titlebar(titlebar=self.headerbar)
         self.application = kwargs.get('application')
@@ -28,6 +30,27 @@ class KarteiWahlUndNeu(Gtk.Window):
         self.set_default_size(400, 400)
         self.set_size_request(400, 400)
 
+        # App menu  - Menu in der Kopfleiste   
+        self.menu_button_model = Gio.Menu()
+        self.menu_button_model.append("about_app", 'app.about')
+        self.menu_button = Gtk.MenuButton.new()
+        self.menu_button.set_icon_name(icon_name='open-menu-symbolic')
+        self.menu_button.set_menu_model(menu_model=self.menu_button_model)
+        self.headerbar.pack_end(child=self.menu_button)
+        
+        self.container = Gtk.Box()  # das ist der Container in den alles hineinkommt
+        self.set_child(self.container)
+        self.container.show()
+
+        self.karteiwahl = KarteiWahlUndNeu(self)
+        self.container.append(self.karteiwahl)
+
+
+class KarteiWahlUndNeu(Gtk.Box):
+    def __init__(self, parent_window):
+        super().__init__(spacing=10)
+        self.__parent_window = parent_window
+        
         db_name = 'karteibox.db'
         os.getcwd() #return the current working directory
            
@@ -37,15 +60,7 @@ class KarteiWahlUndNeu(Gtk.Window):
                 break
             else:
                 self.kartei_liste = Gtk.ListStore(int, str)
-        
-        # App menu  - Menu in der Kopfleiste   
-        self.menu_button_model = Gio.Menu()
-        self.menu_button_model.append("about_app", 'app.about')
-        self.menu_button = Gtk.MenuButton.new()
-        self.menu_button.set_icon_name(icon_name='open-menu-symbolic')
-        self.menu_button.set_menu_model(menu_model=self.menu_button_model)
-        self.headerbar.pack_end(child=self.menu_button)
-        
+               
         # Primary layout
         self.pBox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
         self.pBox.set_halign(Gtk.Align.CENTER)
@@ -87,7 +102,7 @@ class KarteiWahlUndNeu(Gtk.Window):
         self.toast_overlay.set_margin_bottom(margin=1)
         self.toast_overlay.set_margin_start(margin=1)
         
-        self.set_child(self.toast_overlay)
+        self.append(self.toast_overlay)
         self.toast_overlay.set_child(self.pBox)
         
         self.toast = Adw.Toast.new(title='')
@@ -123,7 +138,6 @@ class KarteiWahlUndNeu(Gtk.Window):
             self.kartei_liste.append(weitere_kartei)
             n += 1
 
-        conn.commit()
         conn.close()   # Verbindung schließen
     
     # Show main layout
@@ -164,13 +178,13 @@ class KarteiWahlUndNeu(Gtk.Window):
 
         self.oeffne_kartei()
 
-    def oeffne_kartei(self):
-        win1 = KarteiWahlUndNeu()
-        win1.hide()  # schließt das Fenster der Karteikartenbox
-
-        win2 = KartenListe(self.name)
-        win2.present()   
-        pass
+    def oeffne_kartei(self, *args):
+        self.__parent_window.container.remove(self.__parent_window.karteiwahl)
+        self.__parent_window.container.hide()
+        self.kartenliste = KartenListe(self, self.__parent_window, self.name)
+        self.__parent_window.container.append(self.kartenliste)
+        self.__parent_window.container.show()
+   
 
     def neue_kartei(self, w):                
         name = self.eing1.get_text()
@@ -195,30 +209,22 @@ class KarteiWahlUndNeu(Gtk.Window):
                 'karte_hinten': ' '})
             conn.commit()    # Änderungen mitteilen
             conn.close()   # Verbindung schließen
-
-        win1 = KarteiWahlUndNeu()
-        win1.hide()  # schließt das Fenster der Karteikartenbox
-
-        win1 = KarteiWahlUndNeu()
-        win1.present()   
+        self.__parent_window.container.remove(self.__parent_window.karteiwahl)
+        self.__parent_window.karteiwahl = KarteiWahlUndNeu(self.__parent_window)
+        self.__parent_window.container.append(self.__parent_window.karteiwahl)
         pass
         
     def on_toast_dismissed(self, toast):
         os.popen("rm -rf %s/*" % CACHE)
         os.popen("rm -rf {}/SaveDesktop/.{}/*".format(download_dir, date.today()))
        
-class KartenListe(Gtk.Window):
-    def __init__(self, name, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.set_title(name)
-        self.headerbar = Gtk.HeaderBar.new()
-        self.set_titlebar(titlebar=self.headerbar)
-        self.application = kwargs.get('application')
+class KartenListe(Gtk.Box):
+    def __init__(self, parent_window, opa_window, name):
+        super().__init__(spacing=10)
+        self.__parent_window = parent_window
+        self.__opa_window = opa_window
         self.name = name
-        
-        self.set_default_size(400, 400)
-        self.set_size_request(400, 400)
-        
+               
         self.hole_karten()
 
         # das ist das dropdown-menu links in der Kopfleiste
@@ -230,12 +236,10 @@ class KartenListe(Gtk.Window):
         # Primary layout
         self.pBox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
         self.pBox.set_halign(Gtk.Align.CENTER)
-        #self.pBox.set_valign(Gtk.Align.CENTER)
         self.pBox.set_margin_start(50)
         self.pBox.set_margin_end(50)
 
         self.sw = Gtk.ScrolledWindow()  # Fenster mit Rollbalken
-        #self.sw.set_shadow_type(Gtk.ShadowType.ETCHED_IN)
         self.sw.set_policy(Gtk.PolicyType.NEVER,Gtk.PolicyType.ALWAYS) # horizontal kein Balken, vertikal immer
         self.sw.set_size_request(150,200)
         self.pBox.append(self.sw)
@@ -244,7 +248,7 @@ class KartenListe(Gtk.Window):
         self.list_ansicht.set_model(self.karten_liste)  
         self.sw.set_child(self.list_ansicht)
 
-        spal_titel = ["oid", "Doppelklick öffnet Karteikarte"] 
+        spal_titel = ["oid", "Kartei "+name+": Doppelklick öffnet Karteikarte"] 
         for i in range(1,2):
             rendererText = Gtk.CellRendererText(xalign=0.0, editable=False)
             column = Gtk.TreeViewColumn(spal_titel[i], rendererText, text=i)
@@ -253,14 +257,7 @@ class KartenListe(Gtk.Window):
             
         self.list_ansicht.set_property('activate-on-single-click', False) # Reihe wird mit einem Klick aktiv
         self.list_ansicht.connect('row-activated', self.auswahl)
-        '''
-        self.eing1 = Gtk.Entry()    # Eingabefenster
-        self.eing1.set_width_chars(20)
-        self.eing1.add_css_class("card")
-        self.eing1.set_margin_top(10)
-        self.eing1.set_placeholder_text("Name der neuen Karteikarte")
-        self.pBox.append(self.eing1)   '''     
-      
+    
         # Toast
         self.toast_overlay = Adw.ToastOverlay.new()
         self.toast_overlay.set_margin_top(margin=1)
@@ -268,7 +265,7 @@ class KartenListe(Gtk.Window):
         self.toast_overlay.set_margin_bottom(margin=1)
         self.toast_overlay.set_margin_start(margin=1)
         
-        self.set_child(self.toast_overlay)
+        self.append(self.toast_overlay)
         self.toast_overlay.set_child(self.pBox)
         
         self.toast = Adw.Toast.new(title='')
@@ -276,7 +273,6 @@ class KartenListe(Gtk.Window):
         self.toast.connect('dismissed', self.on_toast_dismissed)
         
         self.create_window()
-        self.headerbar.pack_start(self.savedesktop_mode_dropdwn)
         
     def celldata(self, col, cell, mdl, itr, i):   # Formattiert die Ausgabe der Datenansicht
     # col = Columnn, cell = Cell, mdl = model, itr = iter, i = column number
@@ -303,14 +299,13 @@ class KartenListe(Gtk.Window):
             if list(zeile)[1] != ' ':  # ergibt Liste aller Karten mit Namen
                 self.alle_karten.append(list(zeile)[1])
 
-        self.karten_liste = Gtk.ListStore(int, str)  # Liste der vorhandenen Karteien
+        self.karten_liste = Gtk.ListStore(int, str)  # Liste der vorhandenen Karten
         n = 0
-        for karte in self.alle_karten: # in der ListStore ist jede Kartei nur einmal
+        for karte in self.alle_karten: # in der ListStore ist jede Karte nur einmal
             weitere_karte = [n,karte]
             self.karten_liste.append(weitere_karte)
             n += 1
 
-        conn.commit()
         conn.close()   # Verbindung schließen
     
     def change_savedesktop_mode(self, w, pspec):
@@ -354,39 +349,33 @@ class KartenListe(Gtk.Window):
         # Ausgabe in die Eingabefelder
         self.kart = werte[1]
         
-        #self.eing1.set_placeholder_text(self.kart)
-
         self.zeige_karte()
 
-    def zeige_karte(self):
-        win2 = KartenListe(self.name)
-        win2.hide()  # schließt das Fenster der Karteikartenbox
-        
-        win3 = Karte(self.name, self.kart)
-        win3.present()   
+    def zeige_karte(self):        
+        kart = Karte(self.oid, self.name, self.kart, self.__parent_window, self.__opa_window)
+        kart.present()   
         pass
 
     def neue_karte(self, w):
-        #self.kart = self.eing1.get_text()
-        win2 = KartenListe(self.name)
-        win2.hide()  # schließt das Fenster der Karteikartenbox
-        win3 = KarteNeu(self.name)        
-        #win3 = KarteNeu(self.name, self.kart)
-        win3.present()   
+        kart = KarteNeu(self.name, self.__parent_window, self.__opa_window)        
+        kart.present()   
         
     def on_toast_dismissed(self, toast):
         os.popen("rm -rf %s/*" % CACHE)
         os.popen("rm -rf {}/SaveDesktop/.{}/*".format(download_dir, date.today()))
        
 class KarteNeu(Gtk.Window):
-    def __init__(self, name, *args, **kwargs):
+    def __init__(self, name, parent_window, opa_window, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.set_title('Neue Karte')
+        
+        self.__parent_window = parent_window
+        self.__opa_window    = opa_window
+        
+        self.set_title('Neue Karte '+name)
         self.headerbar = Gtk.HeaderBar.new()
         self.set_titlebar(titlebar=self.headerbar)
         self.application = kwargs.get('application')
         self.name =name
-        #self.kart = kart
         
         self.set_default_size(300, 300)
         self.set_size_request(00, 300)
@@ -394,7 +383,6 @@ class KarteNeu(Gtk.Window):
         # Primary layout
         self.pBox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
         self.pBox.set_halign(Gtk.Align.CENTER)
-        #self.pBox.set_valign(Gtk.Align.CENTER)
         self.pBox.set_margin_start(20)
         self.pBox.set_margin_end(20)
   
@@ -403,7 +391,6 @@ class KarteNeu(Gtk.Window):
         self.eing1.add_css_class("card")
         self.eing1.set_margin_top(10)
         self.eing1.set_placeholder_text('Vorderseite der Karte')        
-        #self.eing1.set_text(self.kart)
         self.pBox.append(self.eing1)        
       
         self.eing2 = Gtk.Entry()    # Eingabefenster
@@ -411,8 +398,8 @@ class KarteNeu(Gtk.Window):
         self.eing2.add_css_class("card")
         self.eing2.set_margin_top(10)
         self.eing2.set_placeholder_text('Rückseite der Karte')
-        self.pBox.append(self.eing2)        
-
+        self.pBox.append(self.eing2)      
+    
         # Toast
         self.toast_overlay = Adw.ToastOverlay.new()
         self.toast_overlay.set_margin_top(margin=1)
@@ -431,7 +418,7 @@ class KarteNeu(Gtk.Window):
 
     # Show main layout
     def create_window(self):
-        
+    
         # Box für das Erstellen der Kartei
         self.saveBox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         self.pBox.append(self.saveBox)
@@ -442,12 +429,12 @@ class KarteNeu(Gtk.Window):
         self.btnBox.set_margin_end(40)
         self.saveBox.append(self.btnBox)
         
-        self.saveButton = Gtk.Button.new_with_label("Speichere neue Karte")
+        self.saveButton = Gtk.Button.new_with_label("Speichere neue Karte") # Knopf in der Buttonbox
         self.saveButton.add_css_class("suggested-action")
         self.saveButton.add_css_class("pill")
         self.saveButton.connect("clicked", self.speichere_karte)
         self.btnBox.append(self.saveButton)
-
+        
     def speichere_karte(self, w):
         name = self.name
         kart = self.eing1.get_text()
@@ -463,24 +450,29 @@ class KarteNeu(Gtk.Window):
         conn.commit()    # Änderungen mitteilen
         conn.close()   # Verbindung schließen
 
-        win3 = KarteNeu(self.name)
-        win3.hide()   
-        win2 = KartenListe(self.name)
-        win2.present()  # schließt das Fenster der Karteikartenbox
-
+        self.__opa_window.container.remove(self.__parent_window.kartenliste)
+        self.__parent_window.kartenliste = KartenListe(self.__parent_window, self.__opa_window, self.name)
+        self.__opa_window.container.append(self.__parent_window.kartenliste)
+        self.close()
+        
     def on_toast_dismissed(self, toast):
         os.popen("rm -rf %s/*" % CACHE)
         os.popen("rm -rf {}/SaveDesktop/.{}/*".format(download_dir, date.today()))
 
 class Karte(Gtk.Window):
-    def __init__(self, name, kart, *args, **kwargs):
+    def __init__(self, oid, name, kart, parent_window, opa_window, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        
+        self.__parent_window = parent_window
+        self.__opa_window    = opa_window
+        
         self.set_title(name)
         self.headerbar = Gtk.HeaderBar.new()
         self.set_titlebar(titlebar=self.headerbar)
         self.application = kwargs.get('application')
-        self.name =name
+        self.name = name
         self.kart = kart
+        self.oid = oid
         
         self.set_default_size(300, 300)
         self.set_size_request(300, 300)
@@ -540,51 +532,61 @@ class Karte(Gtk.Window):
         self.saveButton = Gtk.Button.new_with_label("Ändere Rückseite")
         self.saveButton.add_css_class("suggested-action")
         self.saveButton.add_css_class("pill")
-        self.saveButton.connect("clicked", self.speichere_karte)
+        self.saveButton.connect("clicked", self.aendere_hinten)
         self.btnBox.append(self.saveButton)
 
-        self.Taste = Gtk.Button.new_with_label("Zurück zur Kartenliste")
-        self.Taste.add_css_class("suggested-action")
-        self.Taste.add_css_class("pill")
-        self.Taste.connect("clicked", self.zu_kartliste)
-        self.btnBox.append(self.Taste)
-
+        self.loeschBut = Gtk.Button.new_with_label("Lösche Karte")
+        self.loeschBut.add_css_class("suggested-action")
+        self.loeschBut.add_css_class("pill")
+        self.loeschBut.connect("clicked", self.loesch_karte)
+        self.btnBox.append(self.loeschBut)
+        
     def kart_daten(self):
-        name = self.name
-        kart = self.kart
-
         conn = sqlite3.connect('karteibox.db')        
         c = conn.cursor() # eine cursor instanz erstellen
             # Tabelle mit Karteien
         c.execute("select * from karteibox where kartei=:c and karte_vorn=:d", {"c": self.name, "d":self.kart})   # die originale id und der Karteiname wird geholt
         zeile = c.fetchall()
         self.kart_hint = zeile[0][2]
-        
-        conn.commit()    # Änderungen mitteilen
         conn.close()   # Verbindung schließen
 
-    def speichere_karte(self, w):
-        name = self.name
-        kart = self.eing1.get_text()
-        kart_hint = self.eing2.get_text()
-        os.getcwd() #return the current working directory
-        conn = sqlite3.connect('karteibox.db')        
-        c = conn.cursor() # eine cursor instanz erstellen
-            # Tabelle mit Karteien
-        c.execute("""INSERT INTO karteibox VALUES (
-                    :kartei, :karte_vorn, :karte_hinten)""",              
-                    {'kartei': name, 'karte_vorn': kart ,
-                    'karte_hinten': kart_hint})
-        conn.commit()    # Änderungen mitteilen
-        conn.close()   # Verbindung schließen
-        
-        zu_kartliste()
+    def aendere_hinten(self,w):  # oid ist die ID der Zeile
+        self.kart_hint = self.eing2.get_text()
+        # Datenbank aktualisieren ---------------------
+        conn =sqlite3.connect('karteibox.db')
+        c = conn.cursor()
 
-    def zu_kartliste(self,w):
-        win4 = Karte(self.name, self.kart)
-        win4.hide()   
-        win2 = KartenListe(self.name)
-        win2.present()  
+        # es folgt der auszuführende Befehl oid ist der primäre Schlüssel den sqlite kreirt hat
+        c.execute("UPDATE karteibox SET karte_hinten = :kh WHERE kartei=:c and karte_vorn=:d", {"kh": self.kart_hint,"c": self.name, "d":self.kart})
+
+        # Änderungen mitteilen
+        conn.commit()
+        
+        # Verbindung schließen
+        conn.close()           # Ende Aktualisierung Datenbank
+        
+        self.__opa_window.container.remove(self.__parent_window.kartenliste)
+        self.__parent_window.kartenliste = KartenListe(self.__parent_window, self.__opa_window, self.name)
+        self.__opa_window.container.append(self.__parent_window.kartenliste)
+        self.close()
+        
+    def loesch_karte(self, w):
+        # mit existierender Datenbank verbinden und cursor Instanz kreiren
+        conn =sqlite3.connect('karteibox.db')
+        c = conn.cursor()
+
+        # aus der Datenbank entfernen oid ist der primäre Schlüssl den sqlite kreirt hat
+        c.execute("DELETE from karteibox WHERE kartei=:c and karte_vorn=:d", {"c": self.name, "d":self.kart})
+
+        # Änderungen mitteilen
+        conn.commit()
+        
+        conn.close() # Ende Aktualisierung Datenbank
+              
+        self.__opa_window.container.remove(self.__parent_window.kartenliste)
+        self.__parent_window.kartenliste = KartenListe(self.__parent_window, self.__opa_window, self.name)
+        self.__opa_window.container.append(self.__parent_window.kartenliste)
+        self.close()
         
     def on_toast_dismissed(self, toast):
         os.popen("rm -rf %s/*" % CACHE)
@@ -596,9 +598,8 @@ class MyApp(Adw.Application):
         self.connect('activate', self.on_activate)
     
     def on_activate(self, app):
-        self.win = KarteiWahlUndNeu(application=app)
+        self.win = StartFenster(application=app)
         self.win.present()
-        
         
 app = MyApp()
 app.run(sys.argv)
